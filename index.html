@@ -1,0 +1,221 @@
+from flask import Flask, render_template, jsonify, request
+import requests
+import threading
+import time
+from itertools import cycle
+from datetime import datetime
+
+app = Flask(__name__)
+
+# Глобальные настройки и статистика
+stats = {
+    'tokens': [],
+    'token_cycle': None,
+    'vanities': [],
+    'threads_count': 0,
+    'threads_active': 0,
+    'total_requests': 0,
+    'requests_per_second': 0,
+    'last_30_sec': 0,
+    'last_30_min': 0,
+    'status': 'WAITING',
+    'claimed': False,
+    'claimed_vanity': None,
+    'logs': [],
+    'start_time': None,
+}
+
+stats_lock = threading.Lock()
+worker_threads = []
+
+# Добавление логов
+def add_log(message):
+    timestamp = datetime.now().strftime("%H:%M:%S")
+    log_entry = f"[{timestamp}] {message}"
+    with stats_lock:
+        stats['logs'].insert(0, log_entry)
+        if len(stats['logs']) > 50:
+            stats['logs'] = stats['logs'][:50]
+
+# Telegram уведомление (опционально)
+telegram_bot_token = ''
+telegram_chat_id = ''
+
+def send_telegram_message(message):
+    if not telegram_bot_token or not telegram_chat_id:
+        return
+    try:
+        requests.post(f"https://api.telegram.org/bot{telegram_bot_token}/sendMessage",
+                      data={'chat_id': telegram_chat_id, 'text': message})
+        add_log(f"Telegram: {message}")
+    except Exception as e:
+        add_log(f"Telegram error: {e}")
+
+# Проверка и захват vanity
+def check_and_claim(worker_id):
+    add_log(f"Worker-{worker_id} started")
+    while not stats['claimed']:
+        with stats_lock:
+            if stats['claimed'] or not stats['tokens']:
+                time.sleep(0.1)
+                continue
+            stats['total_requests'] += 1
+            stats['last_30_sec'] += 1
+
+        token = next(stats['token_cycle'])
+
+        for vanity in stats['vanities']:
+            try:
+                response = requests.post('https://api.vk.com/method/utils.resolveScreenName', data={
+                    'screen_name': vanity,
+                    'access_token': token,
+                    'v': '5.192'
+                }, timeout=5).json()
+
+                if 'response' in response and response['response']['type'] is None:
+                    claim_resp = requests.post('https://api.vk.com/method/account.saveProfileInfo', data={
+                        'screen_name': vanity,
+                        'access_token': token,
+                        'v': '5.192'
+                    }, timeout=5).json()
+                    if 'response' in claim_resp:
+                        add_log(f"✅ Захватил vk.com/{vanity}")
+                        send_telegram_message(f"✅ Захватил vk.com/{vanity}")
+                        with stats_lock:
+                            stats['claimed'] = True
+                            stats['claimed_vanity'] = vanity
+                            stats['status'] = f"CLAIMED: vk.com/{vanity}"
+                            stats['threads_active'] = 0
+                        return
+
+            except Exception as e:
+                add_log(f"Worker-{worker_id} error: {e}")
+            time.sleep(0.05)
+    add_log(f"Worker-{worker_id} stopped")
+
+# Управление потоками
+def start_threads(thread_count):
+    with stats_lock:
+        stats['threads_count'] = thread_count
+        stats['threads_active'] = thread_count
+        stats['status'] = 'CLAIMING'
+        stats['start_time'] = datetime.now().strftime("%H:%M:%S")
+        stats['token_cycle'] = cycle(stats['tokens'])
+
+    add_log(f"Запуск {thread_count} потоков...")
+
+    for i in range(thread_count):
+        t = threading.Thread(target=check_and_claim, args=(i+1,))
+        t.daemon = True
+        t.start()
+        worker_threads.append(t)
+
+def stop_threads():
+    with stats_lock:
+        stats['claimed'] = True
+        stats['threads_active'] = 0
+        stats['status'] = 'STOPPED'
+    add_log("Остановка всех потоков...")
+
+# Flask маршруты
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/api/stats')
+def api_stats():
+    with stats_lock:
+        return jsonify(stats)
+
+@app.route('/api/start', methods=['POST'])
+def api_start():
+    data = request.json
+    with stats_lock:
+        stats['tokens'] = data.get('tokens', [])
+        stats['vanities'] = data.get('vanities', [])
+    thread_count = data.get('threads', 4)
+    start_threads(thread_count)
+    return jsonify({'status': 'started', 'threads': thread_count})
+
+@app.route('/api/stop')
+def api_stop():
+    stop_threads()
+    return jsonify({'status': 'stopped'})
+
+@app.route('/api/reset')
+def api_reset():
+    stop_threads()
+    with stats_lock:
+        stats.update({
+            'threads_active': 0,
+            'total_requests': 0,
+            'requests_per_second': 0,
+            'last_30_sec': 0,
+            'last_30_min': 0,
+            'status': 'WAITING',
+            'claimed': False,
+            'claimed_vanity': None,
+            'logs': [],
+            'start_time': None,
+        })
+    add_log("Система сброшена")
+    return jsonify({'status': 'reset'})
+
+if __name__ == '__main__':
+    import os
+    os.makedirs('templates', exist_ok=True)
+    # Сохраняем минимальный HTML с вводом токенов и потоков
+    with open('templates/index.html', 'w', encoding='utf-8') as f:
+        f.write('''<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>VK Claimer Dashboard</title></head>
+<body>
+<h1>VK Claimer Dashboard</h1>
+<label>Tokens (comma separated):</label>
+<input type="text" id="tokens" size="50"><br>
+<label>Vanities (comma separated):</label>
+<input type="text" id="vanities" size="50"><br>
+<label>Threads:</label>
+<input type="number" id="threads" value="4"><br>
+<button onclick="startClaimer()">Start</button>
+<button onclick="stopClaimer()">Stop</button>
+<button onclick="resetClaimer()">Reset</button>
+
+<h2>Status: <span id="status">WAITING</span></h2>
+<h3>Logs:</h3>
+<div id="logs" style="max-height:200px;overflow:auto;background:#eee;padding:5px;"></div>
+
+<script>
+async function startClaimer(){
+    let tokens = document.getElementById('tokens').value.split(',').map(t=>t.trim()).filter(t=>t);
+    let vanities = document.getElementById('vanities').value.split(',').map(v=>v.trim()).filter(v=>v);
+    let threads = parseInt(document.getElementById('threads').value)||4;
+    let resp = await fetch('/api/start',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({tokens, vanities, threads})
+    });
+    document.getElementById('status').textContent = 'CLAIMING';
+    fetchStats();
+}
+async function stopClaimer(){
+    await fetch('/api/stop');
+    document.getElementById('status').textContent = 'STOPPED';
+}
+async function resetClaimer(){
+    await fetch('/api/reset');
+    document.getElementById('status').textContent = 'WAITING';
+}
+async function fetchStats(){
+    let resp = await fetch('/api/stats');
+    let data = await resp.json();
+    let logsEl = document.getElementById('logs');
+    logsEl.innerHTML = '';
+    data.logs.forEach(log=>{ logsEl.innerHTML += log+'<br>'; });
+    if(!data.claimed) setTimeout(fetchStats,1000);
+}
+</script>
+</body>
+</html>''')
+    print("Открыть http://localhost:5000 для доступа к панели")
+    app.run(debug=False, host='0.0.0.0', port=5000)

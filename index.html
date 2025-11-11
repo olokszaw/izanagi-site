@@ -1,0 +1,954 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Наши Воспоминания</title>
+  <meta name="description" content="Романтическая галерея для сохранения особенных моментов" />
+  
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --background: hsl(10 55% 97%);
+      --foreground: hsl(340 30% 25%);
+      --primary: hsl(340 75% 60%);
+      --primary-foreground: hsl(0 0% 100%);
+      --secondary: hsl(25 85% 70%);
+      --muted: hsl(10 40% 95%);
+      --muted-foreground: hsl(340 20% 50%);
+      --border: hsl(10 30% 90%);
+      --destructive: hsl(0 84.2% 60.2%);
+      --destructive-foreground: hsl(0 0% 100%);
+      --gradient-romantic: linear-gradient(135deg, hsl(340 75% 60%) 0%, hsl(25 85% 70%) 100%);
+      --shadow-romantic: 0 10px 40px -10px hsl(340 75% 60% / 0.3);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, var(--background) 0%, var(--muted) 50%, hsl(320 40% 95%) 100%);
+      color: var(--foreground);
+      min-height: 100vh;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* Auth Page */
+    .auth-container {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .auth-card {
+      background: white;
+      padding: 2rem;
+      border-radius: 1rem;
+      box-shadow: var(--shadow-romantic);
+      max-width: 400px;
+      width: 100%;
+      animation: scaleIn 0.4s ease-out;
+    }
+
+    .auth-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .auth-icon {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 1rem;
+      background: var(--gradient-romantic);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    .auth-title {
+      font-size: 2rem;
+      font-weight: bold;
+      background: var(--gradient-romantic);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+    }
+
+    .auth-description {
+      color: var(--muted-foreground);
+      font-size: 1rem;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    input[type="email"],
+    input[type="password"],
+    input[type="date"],
+    input[type="file"],
+    textarea {
+      width: 100%;
+      padding: 0.75rem;
+      border: 2px solid var(--border);
+      border-radius: 0.5rem;
+      font-size: 1rem;
+      transition: all 0.3s;
+    }
+
+    input:focus,
+    textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px hsl(340 75% 60% / 0.1);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+      font-family: inherit;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 0.75rem;
+      border: none;
+      border-radius: 0.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .btn-primary {
+      background: var(--gradient-romantic);
+      color: var(--primary-foreground);
+    }
+
+    .btn-primary:hover {
+      opacity: 0.9;
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .text-link {
+      display: block;
+      text-align: center;
+      margin-top: 1rem;
+      color: var(--muted-foreground);
+      text-decoration: none;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+
+    .text-link:hover {
+      color: var(--foreground);
+    }
+
+    /* Main App */
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      background: hsl(10 55% 97% / 0.8);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 1.5rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .header-icon {
+      width: 48px;
+      height: 48px;
+      background: var(--gradient-romantic);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    .header-title {
+      font-size: 1.875rem;
+      font-weight: bold;
+      background: var(--gradient-romantic);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .btn-icon {
+      width: 40px;
+      height: 40px;
+      border: 2px solid var(--border);
+      background: white;
+      border-radius: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .btn-icon:hover {
+      background: var(--destructive);
+      border-color: var(--destructive);
+      color: var(--destructive-foreground);
+    }
+
+    .main-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 3rem 1rem;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 5rem 1rem;
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    .empty-icon {
+      width: 96px;
+      height: 96px;
+      margin: 0 auto 1.5rem;
+      background: linear-gradient(135deg, hsl(340 75% 60% / 0.2) 0%, hsl(25 85% 70% / 0.2) 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .empty-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+    }
+
+    .empty-description {
+      color: var(--muted-foreground);
+      font-size: 1.125rem;
+    }
+
+    .memories-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .memory-card {
+      position: relative;
+      aspect-ratio: 1;
+      overflow: hidden;
+      border-radius: 1rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      transition: all 0.5s;
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    .memory-card:hover {
+      box-shadow: var(--shadow-romantic);
+    }
+
+    .memory-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.7s;
+    }
+
+    .memory-card:hover .memory-img {
+      transform: scale(1.1);
+    }
+
+    .memory-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.4) 50%, transparent 100%);
+      opacity: 0;
+      transition: opacity 0.5s;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 1.5rem;
+    }
+
+    .memory-card:hover .memory-overlay {
+      opacity: 1;
+    }
+
+    .memory-content {
+      transform: translateY(1rem);
+      transition: transform 0.5s;
+    }
+
+    .memory-card:hover .memory-content {
+      transform: translateY(0);
+    }
+
+    .memory-date {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 0.875rem;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+    }
+
+    .memory-description {
+      color: white;
+      font-size: 1rem;
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .memory-delete {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      width: 36px;
+      height: 36px;
+      background: var(--destructive);
+      color: var(--destructive-foreground);
+      border: none;
+      border-radius: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .memory-card:hover .memory-delete {
+      opacity: 1;
+    }
+
+    .fab {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      width: 64px;
+      height: 64px;
+      background: var(--gradient-romantic);
+      border: none;
+      border-radius: 50%;
+      box-shadow: var(--shadow-romantic);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      z-index: 50;
+    }
+
+    .fab:hover {
+      transform: scale(1.1);
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 1rem;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 2rem;
+      border-radius: 1rem;
+      max-width: 500px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      animation: scaleIn 0.3s ease-out;
+    }
+
+    .modal-header {
+      margin-bottom: 1.5rem;
+    }
+
+    .modal-title {
+      font-size: 1.5rem;
+      font-weight: bold;
+      background: var(--gradient-romantic);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+    }
+
+    .modal-description {
+      color: var(--muted-foreground);
+      font-size: 0.875rem;
+    }
+
+    .file-input-label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem;
+      border: 2px solid var(--border);
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .file-input-label:hover {
+      background: var(--muted);
+    }
+
+    .file-input-text {
+      font-size: 0.875rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+    }
+
+    /* Loading */
+    .loading-container {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .loading-icon {
+      animation: float 3s ease-in-out infinite;
+    }
+
+    /* Icons */
+    .icon-heart {
+      width: 32px;
+      height: 32px;
+      fill: currentColor;
+    }
+
+    .icon-sm {
+      width: 20px;
+      height: 20px;
+    }
+
+    .icon-md {
+      width: 24px;
+      height: 24px;
+    }
+
+    .icon-lg {
+      width: 48px;
+      height: 48px;
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes scaleIn {
+      from {
+        transform: scale(0.95);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    @keyframes float {
+      0%, 100% {
+        transform: translateY(0px);
+      }
+      50% {
+        transform: translateY(-10px);
+      }
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: white;
+      padding: 1rem 1.5rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      z-index: 200;
+      animation: fadeIn 0.3s ease-out;
+      max-width: 90%;
+    }
+
+    .toast.error {
+      background: var(--destructive);
+      color: var(--destructive-foreground);
+    }
+
+    @media (max-width: 768px) {
+      .header-title {
+        font-size: 1.25rem;
+      }
+
+      .header-icon {
+        width: 40px;
+        height: 40px;
+      }
+
+      .memories-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 1rem;
+      }
+
+      .fab {
+        width: 56px;
+        height: 56px;
+        bottom: 1.5rem;
+        right: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Loading -->
+  <div id="loading" class="loading-container">
+    <div class="loading-icon">
+      <svg class="icon-heart icon-lg" viewBox="0 0 24 24" style="color: var(--primary)">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Auth Page -->
+  <div id="authPage" class="auth-container hidden">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="auth-icon">
+          <svg class="icon-heart" viewBox="0 0 24 24" style="color: white">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+          </svg>
+        </div>
+        <h1 class="auth-title">Наши Воспоминания</h1>
+        <p class="auth-description" id="authDescription">Войдите, чтобы увидеть ваши воспоминания</p>
+      </div>
+      <form id="authForm">
+        <div class="form-group">
+          <input type="email" id="authEmail" placeholder="Email" required />
+        </div>
+        <div class="form-group">
+          <input type="password" id="authPassword" placeholder="Пароль" required />
+        </div>
+        <button type="submit" class="btn btn-primary" id="authSubmit">Войти</button>
+        <a class="text-link" id="authToggle">Нет аккаунта? Зарегистрируйтесь</a>
+      </form>
+    </div>
+  </div>
+
+  <!-- Main App -->
+  <div id="mainApp" class="hidden">
+    <header class="header">
+      <div class="header-content">
+        <div class="header-left">
+          <div class="header-icon">
+            <svg class="icon-heart icon-sm" viewBox="0 0 24 24" style="color: white">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+          </div>
+          <h1 class="header-title">Наши Воспоминания</h1>
+        </div>
+        <button class="btn-icon" id="signOutBtn" title="Выйти">
+          <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <div id="emptyState" class="empty-state">
+        <div class="empty-icon">
+          <svg class="icon-lg" viewBox="0 0 24 24" style="color: var(--primary)">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+          </svg>
+        </div>
+        <h2 class="empty-title">Начните создавать воспоминания</h2>
+        <p class="empty-description">Нажмите на кнопку + чтобы добавить первое фото</p>
+      </div>
+
+      <div id="memoriesGrid" class="memories-grid hidden"></div>
+    </main>
+
+    <button class="fab" id="addMemoryBtn" title="Добавить воспоминание">
+      <svg class="icon-md" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Upload Modal -->
+  <div id="uploadModal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">Добавить воспоминание</h2>
+        <p class="modal-description">Загрузите фото и добавьте детали</p>
+      </div>
+      <form id="uploadForm">
+        <div class="form-group">
+          <label>Фотография</label>
+          <input type="file" id="photoFile" accept="image/*" style="display: none" required />
+          <label for="photoFile" class="file-input-label">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            <span class="file-input-text" id="fileInputText">Выберите фото</span>
+          </label>
+        </div>
+        <div class="form-group">
+          <label>Дата</label>
+          <input type="date" id="memoryDate" required />
+        </div>
+        <div class="form-group">
+          <label>Описание (необязательно)</label>
+          <textarea id="memoryDescription" placeholder="Расскажите об этом моменте..."></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary" id="uploadSubmit">Добавить воспоминание</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://qhkcpeijprnahyfurunk.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFoa2NwZWlqcHJuYWh5ZnVydW5rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI4Nzg4NzIsImV4cCI6MjA3ODQ1NDg3Mn0.sufWWXno0i83o4xTUjDdn1D-uPR7f6g0ZOHh3IYMv0Q';
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let isLogin = true;
+    let currentUser = null;
+
+    // Elements
+    const loading = document.getElementById('loading');
+    const authPage = document.getElementById('authPage');
+    const mainApp = document.getElementById('mainApp');
+    const authForm = document.getElementById('authForm');
+    const authToggle = document.getElementById('authToggle');
+    const authDescription = document.getElementById('authDescription');
+    const authSubmit = document.getElementById('authSubmit');
+    const signOutBtn = document.getElementById('signOutBtn');
+    const addMemoryBtn = document.getElementById('addMemoryBtn');
+    const uploadModal = document.getElementById('uploadModal');
+    const uploadForm = document.getElementById('uploadForm');
+    const photoFile = document.getElementById('photoFile');
+    const fileInputText = document.getElementById('fileInputText');
+    const emptyState = document.getElementById('emptyState');
+    const memoriesGrid = document.getElementById('memoriesGrid');
+
+    // Toast
+    function showToast(message, isError = false) {
+      const toast = document.createElement('div');
+      toast.className = 'toast' + (isError ? ' error' : '');
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.remove();
+      }, 3000);
+    }
+
+    // Format date
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+      return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+    }
+
+    // Initialize
+    async function init() {
+      const { data: { session } } = await supabase.auth.getSession();
+      currentUser = session?.user ?? null;
+      
+      loading.classList.add('hidden');
+      
+      if (currentUser) {
+        authPage.classList.add('hidden');
+        mainApp.classList.remove('hidden');
+        loadMemories();
+      } else {
+        authPage.classList.remove('hidden');
+        mainApp.classList.add('hidden');
+      }
+    }
+
+    // Auth
+    authToggle.addEventListener('click', (e) => {
+      e.preventDefault();
+      isLogin = !isLogin;
+      authDescription.textContent = isLogin 
+        ? 'Войдите, чтобы увидеть ваши воспоминания' 
+        : 'Создайте аккаунт для ваших воспоминаний';
+      authSubmit.textContent = isLogin ? 'Войти' : 'Зарегистрироваться';
+      authToggle.textContent = isLogin 
+        ? 'Нет аккаунта? Зарегистрируйтесь' 
+        : 'Уже есть аккаунт? Войдите';
+    });
+
+    authForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('authEmail').value;
+      const password = document.getElementById('authPassword').value;
+      
+      authSubmit.disabled = true;
+      authSubmit.textContent = 'Загрузка...';
+
+      try {
+        if (isLogin) {
+          const { error } = await supabase.auth.signInWithPassword({ email, password });
+          if (error) throw error;
+          showToast('Добро пожаловать!');
+        } else {
+          const { error } = await supabase.auth.signUp({ email, password });
+          if (error) throw error;
+          showToast('Регистрация успешна!');
+        }
+        
+        const { data: { session } } = await supabase.auth.getSession();
+        currentUser = session?.user ?? null;
+        
+        authPage.classList.add('hidden');
+        mainApp.classList.remove('hidden');
+        loadMemories();
+      } catch (error) {
+        showToast(error.message, true);
+      } finally {
+        authSubmit.disabled = false;
+        authSubmit.textContent = isLogin ? 'Войти' : 'Зарегистрироваться';
+      }
+    });
+
+    signOutBtn.addEventListener('click', async () => {
+      await supabase.auth.signOut();
+      currentUser = null;
+      mainApp.classList.add('hidden');
+      authPage.classList.remove('hidden');
+    });
+
+    // Load Memories
+    async function loadMemories() {
+      try {
+        const { data, error } = await supabase
+          .from('memories')
+          .select('*')
+          .order('memory_date', { ascending: false });
+
+        if (error) throw error;
+
+        if (data.length === 0) {
+          emptyState.classList.remove('hidden');
+          memoriesGrid.classList.add('hidden');
+        } else {
+          emptyState.classList.add('hidden');
+          memoriesGrid.classList.remove('hidden');
+          renderMemories(data);
+        }
+      } catch (error) {
+        showToast('Ошибка загрузки: ' + error.message, true);
+      }
+    }
+
+    function renderMemories(memories) {
+      memoriesGrid.innerHTML = '';
+      memories.forEach((memory, index) => {
+        const card = document.createElement('div');
+        card.className = 'memory-card';
+        card.style.animationDelay = `${index * 0.1}s`;
+        
+        card.innerHTML = `
+          <img src="${memory.photo_url}" alt="Память" class="memory-img" />
+          <div class="memory-overlay">
+            <div class="memory-content">
+              <p class="memory-date">${formatDate(memory.memory_date)}</p>
+              ${memory.description ? `<p class="memory-description">${memory.description}</p>` : ''}
+            </div>
+            <button class="memory-delete" data-id="${memory.id}">
+              <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+            </button>
+          </div>
+        `;
+        
+        memoriesGrid.appendChild(card);
+      });
+
+      // Add delete listeners
+      document.querySelectorAll('.memory-delete').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const id = btn.dataset.id;
+          await deleteMemory(id);
+        });
+      });
+    }
+
+    async function deleteMemory(id) {
+      try {
+        const { error } = await supabase
+          .from('memories')
+          .delete()
+          .eq('id', id);
+
+        if (error) throw error;
+
+        showToast('Удалено');
+        loadMemories();
+      } catch (error) {
+        showToast('Ошибка: ' + error.message, true);
+      }
+    }
+
+    // Upload
+    addMemoryBtn.addEventListener('click', () => {
+      uploadModal.classList.remove('hidden');
+    });
+
+    uploadModal.addEventListener('click', (e) => {
+      if (e.target === uploadModal) {
+        uploadModal.classList.add('hidden');
+      }
+    });
+
+    photoFile.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        fileInputText.textContent = file.name;
+      }
+    });
+
+    uploadForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const file = photoFile.files[0];
+      const date = document.getElementById('memoryDate').value;
+      const description = document.getElementById('memoryDescription').value;
+
+      if (!file || !date) {
+        showToast('Пожалуйста, выберите фото и дату', true);
+        return;
+      }
+
+      const uploadSubmit = document.getElementById('uploadSubmit');
+      uploadSubmit.disabled = true;
+      uploadSubmit.textContent = 'Загрузка...';
+
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('Пользователь не авторизован');
+
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${user.id}/${Math.random()}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('memories')
+          .upload(fileName, file);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('memories')
+          .getPublicUrl(fileName);
+
+        const { error: insertError } = await supabase
+          .from('memories')
+          .insert({
+            user_id: user.id,
+            photo_url: publicUrl,
+            memory_date: date,
+            description: description || null,
+          });
+
+        if (insertError) throw insertError;
+
+        showToast('Успешно! Воспоминание добавлено');
+        uploadModal.classList.add('hidden');
+        uploadForm.reset();
+        fileInputText.textContent = 'Выберите фото';
+        loadMemories();
+      } catch (error) {
+        showToast('Ошибка: ' + error.message, true);
+      } finally {
+        uploadSubmit.disabled = false;
+        uploadSubmit.textContent = 'Добавить воспоминание';
+      }
+    });
+
+    // Start
+    init();
+
+    // Auth state listener
+    supabase.auth.onAuthStateChange((event, session) => {
+      currentUser = session?.user ?? null;
+      if (event === 'SIGNED_IN') {
+        authPage.classList.add('hidden');
+        mainApp.classList.remove('hidden');
+        loadMemories();
+      } else if (event === 'SIGNED_OUT') {
+        mainApp.classList.add('hidden');
+        authPage.classList.remove('hidden');
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cause:wght@100..900&family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+          body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+
+      .background {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-size: cover;
+        background-position: center;
+        filter: brightness(0.7);
+      }
+
+      .content {
+        position: relative;
+        z-index: 1;
+        min-height: 100vh;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 40px 20px;
+        text-align: center;
+        color: white;
+      }
+
+      .content h3 {
+        font-size: 16px;
+        margin-top: 5%;
+        text-transform: uppercase;
+        letter-spacing: 5px;
+        margin-bottom: 2px;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        font-family: "Cause", cursive;
+        font-optical-sizing: auto;
+        font-weight: weight;
+        font-style: normal;
+      }
+
+      .content h1 {
+        font-size: 72px;
+        margin: 0;
+        text-transform: uppercase;
+        letter-spacing: 10px;
+        text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+        font-family: "Cause", cursive;
+        font-optical-sizing: auto;
+        font-weight: weight;
+        font-style: normal;
+      }
+
+      .email-form {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 40px;
+        width: 100%;
+        max-width: 500px;
+      }
+
+      .socials a {
+        color: rgb(255, 255, 255);
+        font-size: 24px;
+        margin: 0 5px;
+        text-decoration: none;
+        transition: color 0.3s;
+      }
+
+      .socials a:hover {
+        color: #87c2e2;
+      }
+
+      .email-form input[type="email"] {
+        width: 200px;
+        padding: 15px 20px;
+        font-size: 16px;
+        background: rgb(255, 255, 255, 0.1);
+        border: 2px solid rgba(158, 155, 184, 0.589);
+        border-radius: 4px;
+        color: white;
+        outline: none;
+        transition: border-color 0.3s, background 0.3s;
+      }
+
+      .email-form input[type="email"]:hover,
+      .email-form input[type="email"]:focus {
+        background: rgba(146, 160, 236, 0.15);
+        border-color: rgba(139, 165, 221, 0.8);
+        transition: transform 0.6s ease-in-out;
+        border-radius: 8px;
+        transform: scale(1.04);
+
+      }
+
+      .email-form button {
+        padding: 15px 30px;
+        font-size: 16px;
+        font-weight: bold;
+        color: white;
+        background: #2c67aa;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: background 0.3s;
+        transition: all 0.3s ease;
+      }
+      .email-form button:hover {
+        background: #357abd;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        transform: translateY(-3px);
+      }
+
+      .email-form button:active {
+        transform: translateY(0);
+        box-shadow: none;
+      }
+
+      .socials {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 40px;
+      }
+
+      .socials a {
+        color: white;
+        font-size: 24px;
+        text-decoration: none;
+        border-bottom: 2px solid transparent;
+        transition: all 0.3s ease;
+      }
+      .socials a:hover {
+        color: #87c2e2;
+        border-bottom: 2px solid #87c2e2;
+      }
+
+      .checkbox {
+        font-family: "Cause", cursive;
+        font-optical-sizing: auto;
+        font-weight: weight;
+        font-style: normal;
+      }
+
+      a {
+        font-family: "Cause", cursive;
+        font-optical-sizing: auto;
+        font-weight: weight;
+        font-style: normal;
+        color: white;
+        text-decoration: none;
+      }
+      }
+
+      .footer a {
+        font-family: "Cause", cursive;
+        font-optical-sizing: auto;
+        font-weight: weight;
+        font-style: normal;
+        font-size: 12px;
+        color: white;
+        text-decoration: none;
+      }
+
+      .email-form input[type="email"]::placeholder {
+        color: rgba(206, 206, 206, 0.7);
+      }
+
+      .email-form button:hover {
+        background: #357abd;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        transform: translateY(-3px);
+      }
+
+      @media (max-width: 480px) {
+        body {
+          overflow-x: hidden;
+        }
+
+        .content {
+          padding: 20px 12px;
+        }
+
+        .content h1 {
+          font-size: 26px;
+          letter-spacing: 1.5px;
+          line-height: 1.2;
+        }
+
+        .content h3 {
+          font-size: 11px;
+          letter-spacing: 2px;
+          margin-top: 16px;
+        }
+
+        .email-form {
+          width: 70%;
+          max-width: 100%;
+        }
+
+        .email-form input[type="email"],
+        .email-form button {
+          width: 100%;
+          max-width: 100%;
+        }
+
+        .socials {
+          gap: 8px;
+        }
+
+        .socials a {
+          font-size: 18px;
+        }
+
+        .footer {
+          font-size: 12px;
+          text-align: center;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="background">
+      <video autoplay muted loop playsinline>
+        <source
+          src="https://video.wixstatic.com/video/11062b_40811fcc9cac4a5bbfb0d93aaa94d70d/1080p/mp4/file.mp4"
+          type="video/mp4"
+        />
+      </video>
+    </div>
+
+    <div class="content">
+      <h3>WE ARE LAUNCHING OUR WEBSITE SOON.</h3>
+      <h1>MARKETING INC.</h1>
+
+      <form class="email-form">
+        <input type="email" placeholder="Enter your email address" required />
+        <button type="submit">Notify Me!</button>
+
+        <label class="checkbox">
+          <input type="checkbox" required />
+          Yes, subscribe me to your newsletter. *
+        </label>
+      </form>
+
+      <div class="socials">
+        <a href="https://www.linkedin.com" target="_blank">
+          <i class="fa-brands fa-linkedin-in"></i>
+        </a>
+
+        <a href="https://www.facebook.com/" target="_blank">
+          <i class="fa-brands fa-facebook-f"></i>
+        </a>
+        <a href="https://x.com/">
+          <i class="fa-brands fa-twitter"></i>
+        </a>
+      </div>
+
+      <footer class="footer">
+        © 2035 by Marketing Inc. Powered and secured by
+        <a href="https://wix.com/">Wix</a>
+      </footer>
+    </div>
+    <script
+      src="https://kit.fontawesome.com/96e2485fe6.js"
+      crossorigin="anonymous"
+    ></script>
+  </body>
+</html>
